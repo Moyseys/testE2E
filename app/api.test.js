@@ -2,10 +2,10 @@ import { describe, before, after, it } from 'node:test'
 import { strictEqual, deepStrictEqual, ok } from 'node:assert'
 const BaseUrl = 'http://localhost:3000'
 
+let _globalToken 
 
 describe('Api Workflow', () => {
     let _server = {}
-    let _globalToken 
 
     before(async () => {
         _server = (await import ('./api.js')).app
@@ -15,7 +15,7 @@ describe('Api Workflow', () => {
 
     after(done => _server.close(done))
 
-    it('nescessario enviar users e password', async () => {
+    it('Deveria negar o acesso, pois é necessário passar users e password', async () => {
         let data = {
             user: 'usurio',
             password: ''
@@ -32,7 +32,7 @@ describe('Api Workflow', () => {
         deepStrictEqual(response, {error: 'user invalid!'})
     })
 
-    it('Sucesso no login', async () => {
+    it('Deveria logar com sucesso', async () => {
         const data = {
             user: 'usurio',
             password: '123'
@@ -45,21 +45,35 @@ describe('Api Workflow', () => {
 
             strictEqual(request.status, 200)
             const response = await request.json()
+
             ok(response.token, 'token está presente')
             _globalToken = response.token
     })
-    it('É nescessario enviar o token de validação', async () => {
-        const request = await fetch(BaseUrl, {
+    it('Deveria não autorizar o acesso pois é nescessário passar o token', async () => {
+        const headers = {authorization: ''}
+
+        const request = await fetch(`${BaseUrl}`, {
+            headers
+        })
+        deepStrictEqual(request.status, 400)
+
+        const response = await request.json()
+        
+
+        deepStrictEqual(response, {error: 'Token inválido'})
+    })
+    it('Deveria deixar passar pois o token é valido', async () => {
+        const request = await fetch(`${BaseUrl}/`, {
             method: 'GET',
             headers: {
-                authorization: ''
+                authorization: _globalToken
             }
         })
 
-        strictEqual(request.status, 400)
+        deepStrictEqual(request.status, 200)
 
         const response = await request.json()
 
-        deepStrictEqual(response, {error: 'Token inválido'})
+        deepStrictEqual(response, {result: 'Olá bem-vindo'})
     })
 })

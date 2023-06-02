@@ -10,12 +10,10 @@ let VALID = {
 
 const jwtKey = 'abc123'
 
-async function isValidHeader(headers){
+function isValidHeader(headers){
   try{
     const auth = headers.authorization.replace(/bearer\s/ig, '')
-    console.log(auth);
     JWT.verify(auth, jwtKey)
-
     return true
   }catch(e){
     return false
@@ -32,7 +30,7 @@ async function loginRoute(request, response){
         return  
     }
 
-    const token = JWT.sign({user, msg: 'Uepa', jwtKey}, jwtKey)
+    const token = JWT.sign({user, msg: 'Uepa'}, jwtKey)
     response.end(JSON.stringify({token}))
 }
 
@@ -40,13 +38,12 @@ async function handler(request, response){
     if(request.url === '/login' && request.method === 'POST'){
         return loginRoute(request, response)
     }
-    if(!await isValidHeader(request.headers)){
+    if(!isValidHeader(request.headers)){
         response.writeHead(400)
-        
         return response.end(JSON.stringify({error: 'Token inválido'}))
     }
 
-    response.end('Hello world')
+    response.end(JSON.stringify({result: 'Olá bem-vindo'}))
 }
 
 const app = createServer(handler)
